@@ -4,6 +4,7 @@ import {
   Networks,
   Operation,
   Asset,
+  Memo,
   BASE_FEE,
   StrKey,
 } from "@stellar/stellar-sdk";
@@ -64,7 +65,6 @@ export async function buildPaymentTransaction({ sourcePublicKey, destination, am
   );
 
   if (memo) {
-    const { Memo } = await import("@stellar/stellar-sdk");
     builder.addMemo(Memo.text(memo.slice(0, 28)));
   }
 
