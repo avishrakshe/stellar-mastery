@@ -1,122 +1,145 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useCallback, useEffect, useState } from "react";
+import Starfield from "./components/Starfield";
+import WalletConnect from "./components/WalletConnect";
+import BalanceCard from "./components/BalanceCard";
+import SendForm from "./components/SendForm";
+import TransactionResult from "./components/TransactionResult";
+import { connectWallet, signXdr } from "./lib/freighter";
+import {
+  fetchXlmBalance,
+  fundWithFriendbot,
+  buildPaymentTransaction,
+  submitSignedTransaction,
+} from "./lib/stellar";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+const EXPECTED_NETWORK = "TESTNET";
+
+export default function App() {
+  const [wallet, setWallet] = useState(null);
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState("");
+
+  const [balanceState, setBalanceState] = useState({ loading: false, exists: false, balance: "0", error: "" });
+  const [funding, setFunding] = useState(false);
+
+  const [sending, setSending] = useState(false);
+  const [txResult, setTxResult] = useState(null);
+
+  const refreshBalance = useCallback(async (address) => {
+    setBalanceState((s) => ({ ...s, loading: true, error: "" }));
+    try {
+      const { exists, balance } = await fetchXlmBalance(address);
+      setBalanceState({ loading: false, exists, balance, error: "" });
+    } catch (err) {
+      setBalanceState({ loading: false, exists: false, balance: "0", error: err.message });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (wallet?.address) refreshBalance(wallet.address);
+  }, [wallet?.address, refreshBalance]);
+
+  async function handleConnect() {
+    setConnecting(true);
+    setConnectError("");
+    try {
+      const w = await connectWallet();
+      if (w.network !== EXPECTED_NETWORK) {
+        setConnectError(
+          `Freighter is set to ${w.network}. Switch it to Test Net in the extension settings.`
+        );
+        return;
+      }
+      setWallet(w);
+    } catch (err) {
+      setConnectError(err.message);
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  function handleDisconnect() {
+    setWallet(null);
+    setBalanceState({ loading: false, exists: false, balance: "0", error: "" });
+    setTxResult(null);
+    setConnectError("");
+  }
+
+  async function handleFund() {
+    setFunding(true);
+    try {
+      await fundWithFriendbot(wallet.address);
+      await refreshBalance(wallet.address);
+    } catch (err) {
+      setBalanceState((s) => ({ ...s, error: err.message }));
+    } finally {
+      setFunding(false);
+    }
+  }
+
+  async function handleSend({ destination, amount, memo }) {
+    setSending(true);
+    setTxResult(null);
+    try {
+      const xdr = await buildPaymentTransaction({
+        sourcePublicKey: wallet.address,
+        destination,
+        amount,
+        memo,
+      });
+      const signedXdr = await signXdr(xdr, wallet.networkPassphrase, wallet.address);
+      const { hash } = await submitSignedTransaction(signedXdr);
+
+      setTxResult({ status: "success", hash, amount, destination });
+      refreshBalance(wallet.address);
+    } catch (err) {
+      setTxResult({ status: "error", message: err.message });
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      <Starfield />
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <header className="app__header">
+        <div className="app__brand">
+          <span className="app__brand-mark" aria-hidden="true">✦</span>
+          Waypoint
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <span className="app__tagline">Send XLM across the Stellar test network</span>
+      </header>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <main className="app__main">
+        <section className="app__col app__col--left">
+          <WalletConnect
+            wallet={wallet}
+            connecting={connecting}
+            error={connectError}
+            onConnect={handleConnect}
+            onDisconnect={handleDisconnect}
+          />
+          {wallet ? (
+            <BalanceCard
+              balanceState={balanceState}
+              onRefresh={() => refreshBalance(wallet.address)}
+              onFund={handleFund}
+              funding={funding}
+            />
+          ) : null}
+        </section>
+
+        <section className="app__col app__col--right">
+          <SendForm onSend={handleSend} sending={sending} disabled={!wallet} />
+          <TransactionResult result={txResult} onDismiss={() => setTxResult(null)} />
+        </section>
+      </main>
+
+      <footer className="app__footer">
+        Testnet only — no real funds are used. Built on Stellar.
+      </footer>
+    </div>
+  );
 }
-
-export default App
