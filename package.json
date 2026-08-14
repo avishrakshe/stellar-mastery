@@ -1,7 +1,8 @@
 {
   "name": "stellar-payment-dapp",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Waypoint — a Stellar Testnet payment dApp with Freighter wallet connect, balance handling, and a full send-transaction flow.",
   "type": "module",
   "scripts": {
     "dev": "vite",
