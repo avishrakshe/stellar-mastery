@@ -93,8 +93,10 @@ export default function App() {
 
       setTxResult({ status: "success", hash, amount, destination });
       refreshBalance(wallet.address);
+      return true;
     } catch (err) {
       setTxResult({ status: "error", message: err.message });
+      return false;
     } finally {
       setSending(false);
     }

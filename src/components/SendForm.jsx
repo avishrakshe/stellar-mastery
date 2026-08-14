@@ -15,7 +15,14 @@ export default function SendForm({ onSend, sending, disabled }) {
     e.preventDefault();
     setTouched(true);
     if (!canSubmit) return;
-    onSend({ destination, amount, memo });
+    onSend({ destination, amount, memo }).then((ok) => {
+      if (ok) {
+        setDestination("");
+        setAmount("");
+        setMemo("");
+        setTouched(false);
+      }
+    });
   }
 
   return (
@@ -29,7 +36,7 @@ export default function SendForm({ onSend, sending, disabled }) {
           placeholder="G..."
           value={destination}
           onChange={(e) => setDestination(e.target.value.trim())}
-          disabled={disabled}
+          disabled={disabled || sending}
         />
         {touched && !destinationValid && destination ? (
           <span className="field__hint field__hint--error">Not a valid Stellar public key.</span>
@@ -48,7 +55,7 @@ export default function SendForm({ onSend, sending, disabled }) {
           placeholder="0.00"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          disabled={disabled}
+          disabled={disabled || sending}
         />
       </label>
 
@@ -60,7 +67,7 @@ export default function SendForm({ onSend, sending, disabled }) {
           maxLength={28}
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
-          disabled={disabled}
+          disabled={disabled || sending}
         />
       </label>
 
