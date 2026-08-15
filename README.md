@@ -91,23 +91,21 @@ src/
 
 ## Screenshots
 
-> Add these after running the app locally with Freighter connected.
-
 **Wallet connected**
 
-`![Wallet connected](./screenshots/wallet-connected.png)`
+![Wallet connected](./screenshots/wallet-connected.png)
 
 **Balance displayed**
 
-`![Balance displayed](./screenshots/balance-displayed.png)`
+![Balance displayed](./screenshots/balance-displayed.png)
 
 **Successful testnet transaction**
 
-`![Transaction submitted](./screenshots/transaction-success.png)`
+![Transaction submitted](./screenshots/transaction-success.png)
 
 **Transaction result shown to the user**
 
-`![Transaction result](./screenshots/transaction-result.png)`
+![Transaction result](./screenshots/transaction-result.png)
 
 ## Notes
 
