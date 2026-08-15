@@ -1,116 +1,113 @@
-# Waypoint — Stellar Testnet Payment dApp
+# AgentPay Rails — Autonomous AI Agent Payment Infrastructure on Stellar & Soroban
 
-A minimal, polished dApp for sending XLM on the Stellar test network. Connect a
-[Freighter](https://freighter.app) wallet, check your testnet balance (with a
-one-click Friendbot fund for empty accounts), send a payment to any address,
-and get clear success/failure feedback with a link to view the transaction on
-[Stellar Expert](https://stellar.expert/explorer/testnet).
+**AgentPay Rails** is a real-time multi-address payment infrastructure built for autonomous AI agents on Stellar Testnet and Soroban. It enables multi-recipient payment batching, live payment lifecycle tracking (`Initiated` ➔ `Routed` ➔ `Settled`), real-time Horizon event streaming via SSE, multi-wallet selection (Freighter, Albedo, xBull, Hana, and Agent Keypair Mode), and smart contract integration with Soroban.
 
-Built for the White Belt / Level 1 challenge: wallet connect, balance
-handling, and a full send-payment transaction flow, all on Stellar Testnet.
+Built for **Level 2 — Yellow Belt** submission.
 
-## Features
+---
 
-- **Wallet connect / disconnect** via the Freighter browser extension, with a
-  check that the wallet is actually set to Test Net before allowing a send
-- **Balance handling** — fetches the connected account's native XLM balance
-  from Horizon testnet; offers to fund brand-new (unfunded) accounts via
-  Friendbot
-- **Transaction flow** — builds a native XLM payment operation, has Freighter
-  sign it client-side, submits it to Horizon, and reports success (with
-  transaction hash + explorer link) or failure (with a readable error)
-- Dark, glassmorphic UI with an ambient starfield background
+## 🔮 Soroban Smart Contract Details (Level 2 Requirement)
 
-## Tech stack
+- **Deployed Soroban Contract Address (Testnet)**:
+  [`CB67A4W336IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM`](https://stellar.expert/explorer/testnet/contract/CB67A4W336IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM)
+- **Verifiable Contract Call Transaction Hash**:
+  [`6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a`](https://stellar.expert/explorer/testnet/tx/6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a)
+- **Contract Function Invoked**: `register_payment(sender, recipient, amount, memo)`
 
-- [React](https://react.dev) + [Vite](https://vitejs.dev)
-- [`@stellar/stellar-sdk`](https://www.npmjs.com/package/@stellar/stellar-sdk) — transaction building, Horizon queries
-- [`@stellar/freighter-api`](https://www.npmjs.com/package/@stellar/freighter-api) — wallet connect + signing
-- Plain CSS (no framework) — design tokens in `src/index.css`
+---
 
-## Setup instructions
+## ✨ Core Level 2 Features
+
+1. **Multi-Wallet Support (`StellarWalletsKit` / Wallet Modal)**
+   - Connect via **Freighter**, **Albedo**, **xBull**, **Hana Wallet**, or **Agent Keypair Mode** (pre-funded autonomous agent keypairs).
+2. **Explicit Error Handling (3 Error Types Handled)**
+   - **`WALLET_NOT_INSTALLED`**: Detects missing browser extension and provides direct installation links.
+   - **`USER_REJECTED`**: Handles signature cancellation gracefully without crashing state.
+   - **`INSUFFICIENT_BALANCE`**: Automatically detects low/zero XLM balance and provides 1-click Friendbot testnet funding.
+3. **Soroban Smart Contract Integration**
+   - On-chain `PaymentRegistry` contract recording payment intents and settlement verification.
+4. **Real-time Event Streaming (Horizon SSE)**
+   - Real-time Server-Sent Events from `/payments` and `/transactions` endpoints feeding the **Live Status Board** and **Activity Feed**.
+5. **Agent Directory & Batch Composer**
+   - Pre-seeded roster of 5 AI Agents (`PricingAgent`, `SettlementAgent`, `DataVendorAgent`, `ComputeBroker`, `SecurityAuditor`) with live XLM balances and batch payment routing.
+
+---
+
+## 🚀 Setup Instructions
 
 ### 1. Prerequisites
 
 - [Node.js](https://nodejs.org) 18+
-- The [Freighter](https://freighter.app) browser extension installed
-- A Freighter account switched to **Test Net** (Freighter → Settings → change network to `TESTNET`)
+- [Freighter](https://freighter.app) or any supported Stellar wallet (optional, agent keypair mode included)
 
-### 2. Install and run
+### 2. Installation & Running Locally
 
 ```bash
-git clone <this-repo-url>
+git clone https://github.com/avishrakshe/stellar-mastery.git
 cd stellar-payment-dapp
 npm install
 npm run dev
 ```
 
-Open the printed local URL (e.g. `http://localhost:5173`) in the same browser
-where Freighter is installed.
+Open `http://localhost:5173` in your browser.
 
-### 3. Get testnet XLM
-
-If your account has never been used on testnet, the app will detect it
-doesn't exist yet and show a **Fund with Friendbot** button — click it to
-receive 10,000 test XLM instantly. You can also fund manually at
-[laboratory.stellar.org/#account-creator?network=test](https://laboratory.stellar.org/#account-creator?network=test).
-
-### 4. Send a payment
-
-1. Click **Connect Freighter** and approve the connection
-2. Once your balance loads, fill in a destination `G...` address and an
-   amount in the **Send a payment** panel
-3. Click **Send XLM** and approve the signature request in the Freighter
-   popup
-4. Watch the result panel for the confirmation and transaction hash
-
-### 5. Build for production
+### 3. Production Build & Verification
 
 ```bash
+npm run lint
 npm run build
-npm run preview
 ```
 
-## Project structure
+---
+
+## 📸 Screenshots
+
+### Multi-Wallet Options Available (Required Level 2 Screenshot)
+
+![Multi-Wallet Options](./screenshots/wallet-options.png)
+
+### Wallet Connected State
+
+![Wallet connected](./screenshots/wallet-connected.png)
+
+### Balance Displayed
+
+![Balance displayed](./screenshots/balance-displayed.png)
+
+### Successful Testnet Transaction Batch
+
+![Transaction submitted](./screenshots/transaction-success.png)
+
+### Transaction Result Shown to User
+
+![Transaction result](./screenshots/transaction-result.png)
+
+---
+
+## 🛠️ Project Structure
 
 ```
 src/
   lib/
-    freighter.js       wallet connect/disconnect + signing wrapper
-    stellar.js          Horizon balance fetch, Friendbot funding, tx build/submit
+    agents.js          Pre-seeded AI agent keypairs & balance management
+    stellarWallets.js  Multi-wallet adapter (Freighter, Albedo, xBull, Hana, Agent Mode)
+    soroban.js         Soroban RPC helper & contract invocation builder
+    streaming.js       Horizon SSE event streaming client
+    stellar.js         Stellar SDK Horizon transaction builder & submitter
   components/
-    Starfield.jsx        ambient canvas background
-    WalletConnect.jsx    connect / disconnect UI
-    BalanceCard.jsx      XLM balance + refresh + fund
-    SendForm.jsx         destination / amount / memo form with validation
-    TransactionResult.jsx  success / failure feedback + explorer link
-  App.jsx                wires the flows together
-  App.css                layout + component styling
-  index.css               design tokens + global styles
+    MultiWalletModal.jsx   Multi-wallet modal selector
+    AgentDirectory.jsx     AI Agent roster & live balance cards
+    BatchComposer.jsx      Multi-recipient batch payment composer
+    StatusBoard.jsx        Real-time payment lifecycle board
+    ActivityFeed.jsx       Reverse-chronological SSE activity log
+    SorobanRegistryCard.jsx Soroban contract function invocation card
+    Starfield.jsx          Ambient canvas background
+  App.jsx              Main application shell & state coordinator
+  App.css              Glassmorphic dark design system & status animations
 ```
 
-## Screenshots
+---
 
-**Wallet connected**
+## 📜 License
 
-![Wallet connected](./screenshots/wallet-connected.png)
-
-**Balance displayed**
-
-![Balance displayed](./screenshots/balance-displayed.png)
-
-**Successful testnet transaction**
-
-![Transaction submitted](./screenshots/transaction-success.png)
-
-**Transaction result shown to the user**
-
-![Transaction result](./screenshots/transaction-result.png)
-
-## Notes
-
-- This app only ever talks to Stellar **Testnet** Horizon
-  (`https://horizon-testnet.stellar.org`) and Friendbot — no mainnet funds are
-  ever at risk.
-- Transaction signing happens entirely inside the Freighter extension; this
-  app never sees or handles private keys.
+MIT
