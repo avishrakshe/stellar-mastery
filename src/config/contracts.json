@@ -1,0 +1,21 @@
+{
+  "network": "testnet",
+  "rpcUrl": "https://soroban-testnet.stellar.org",
+  "horizonUrl": "https://horizon-testnet.stellar.org",
+  "deployerPublicKey": "GD7B2P4N6XQZ8YWM3KVTR1O9LC5E7F0A2B3C4D5E6F7A8B9C0D1E2F3A",
+  "contracts": {
+    "paymentVault": {
+      "name": "PaymentVault",
+      "address": "CB67A4W336IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM",
+      "txHash": "6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a",
+      "status": "ACTIVE"
+    },
+    "agentRouter": {
+      "name": "AgentRouter",
+      "address": "CC34B7Y88IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM",
+      "txHash": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+      "status": "ACTIVE"
+    }
+  },
+  "deployedAt": "2026-08-17T01:00:00.000Z"
+}
