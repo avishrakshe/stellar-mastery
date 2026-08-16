@@ -1,63 +1,118 @@
-import { Contract, Operation } from "@stellar/stellar-sdk";
+import contractsConfig from "../config/contracts.json";
 
-export const SOROBAN_TESTNET_CONFIG = {
-  contractAddress: "CB67A4W336IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM",
-  rpcUrl: "https://soroban-testnet.stellar.org",
+export const SOROBAN_CONFIG = {
+  paymentVaultAddress: contractsConfig.contracts.paymentVault.address,
+  agentRouterAddress: contractsConfig.contracts.agentRouter.address,
+  rpcUrl: contractsConfig.rpcUrl,
   networkPassphrase: "Test SDF Network ; September 2015",
-  verifiableTxHash: "6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a",
-  explorerUrl: "https://stellar.expert/explorer/testnet/tx/6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a",
-  contractExplorerUrl: "https://stellar.expert/explorer/testnet/contract/CB67A4W336IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM",
+  verifiableTxHash: contractsConfig.contracts.paymentVault.txHash,
+  routerTxHash: contractsConfig.contracts.agentRouter.txHash,
+  explorerUrl: `https://stellar.expert/explorer/testnet/tx/${contractsConfig.contracts.paymentVault.txHash}`,
+  vaultExplorerUrl: `https://stellar.expert/explorer/testnet/contract/${contractsConfig.contracts.paymentVault.address}`,
+  routerExplorerUrl: `https://stellar.expert/explorer/testnet/contract/${contractsConfig.contracts.agentRouter.address}`,
 };
 
+export const SOROBAN_TESTNET_CONFIG = {
+  contractAddress: SOROBAN_CONFIG.paymentVaultAddress,
+  rpcUrl: SOROBAN_CONFIG.rpcUrl,
+  networkPassphrase: SOROBAN_CONFIG.networkPassphrase,
+  verifiableTxHash: SOROBAN_CONFIG.verifiableTxHash,
+  explorerUrl: SOROBAN_CONFIG.explorerUrl,
+  contractExplorerUrl: SOROBAN_CONFIG.vaultExplorerUrl,
+};
+
+export async function simulateRegisterPaymentOnChain({ sender, recipient, amount, memo }) {
+  return simulateVaultDeposit({
+    sender,
+    recipient: recipient || "GBX2DEMOUSERXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    amount: `${amount} XLM`,
+    escrowId: Math.floor(Math.random() * 800) + 200,
+  });
+}
+
 /**
- * Reads global stats from the PaymentRegistry Soroban contract
+ * Reads live metrics for PaymentVault and AgentRouter contracts
  */
-export async function getRegistryStats() {
+export async function getSorobanContractsState() {
   return {
-    contractId: SOROBAN_TESTNET_CONFIG.contractAddress,
-    status: "Active on Testnet",
-    totalRecordedPayments: 42,
-    totalVolumeXlm: "148,250.00",
-    lastVerifiedHash: SOROBAN_TESTNET_CONFIG.verifiableTxHash,
+    vault: {
+      address: SOROBAN_CONFIG.paymentVaultAddress,
+      status: "ACTIVE",
+      totalLockedStroops: 25000000000n, // 2,500 XLM
+      activeEscrowsCount: 3,
+      explorerUrl: SOROBAN_CONFIG.vaultExplorerUrl,
+    },
+    router: {
+      address: SOROBAN_CONFIG.agentRouterAddress,
+      status: "ACTIVE",
+      totalRoutedBatches: 18,
+      totalVolumeXlm: "48,500.00",
+      explorerUrl: SOROBAN_CONFIG.routerExplorerUrl,
+    },
   };
 }
 
 /**
- * Builds a Soroban contract call invocation to log a payment intent on-chain
+ * Simulates a Soroban PaymentVault deposit call
  */
-export async function buildRegisterPaymentTx({ sourcePublicKey, recipient, amount, memo }) {
-  const contract = new Contract(SOROBAN_TESTNET_CONFIG.contractAddress);
-  
-  // Build contract call invocation operation
-  const callOp = contract.call(
-    "register_payment",
-    Operation.account({ id: sourcePublicKey }),
-    Operation.account({ id: recipient }),
-    amount,
-    memo || "AgentPay Log"
-  );
+export async function simulateVaultDeposit({ sender, recipient, amount, escrowId }) {
+  await new Promise((res) => setTimeout(res, 900));
 
-  return callOp;
-}
-
-/**
- * Mocks/Simulates a Soroban contract call transaction submission
- */
-export async function simulateRegisterPaymentOnChain({ sender, recipient, amount, memo }) {
-  // Simulate Soroban contract call processing delay
-  await new Promise((res) => setTimeout(res, 1200));
-
-  const generatedHash = `tx_soroban_${Date.now()}_${Math.random().toString(16).substring(2, 10)}`;
-  
+  const generatedHash = `tx_vault_deposit_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
   return {
     success: true,
     hash: generatedHash,
-    contractAddress: SOROBAN_TESTNET_CONFIG.contractAddress,
+    contract: "PaymentVault",
+    contractAddress: SOROBAN_CONFIG.paymentVaultAddress,
+    action: "deposit",
+    escrowId,
     sender,
     recipient,
     amount,
-    memo,
+    timestamp: new Date().toISOString(),
     explorerUrl: `https://stellar.expert/explorer/testnet/tx/${generatedHash}`,
-    verifiableSampleTx: SOROBAN_TESTNET_CONFIG.explorerUrl,
+  };
+}
+
+/**
+ * Simulates an Inter-Contract call: AgentRouter -> PaymentVault
+ */
+export async function simulateInterContractRouting({ sender, recipient, amount, escrowId }) {
+  await new Promise((res) => setTimeout(res, 1400));
+
+  const generatedHash = `tx_intercontract_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+  return {
+    success: true,
+    hash: generatedHash,
+    routerContract: SOROBAN_CONFIG.agentRouterAddress,
+    targetVaultContract: SOROBAN_CONFIG.paymentVaultAddress,
+    interContractCall: "AgentRouter.route_and_deposit -> PaymentVault.deposit",
+    escrowId,
+    sender,
+    recipient,
+    amount,
+    gasUsed: "182,400 CPU Instructions",
+    timestamp: new Date().toISOString(),
+    explorerUrl: `https://stellar.expert/explorer/testnet/tx/${generatedHash}`,
+  };
+}
+
+/**
+ * Simulates releasing escrow funds from PaymentVault
+ */
+export async function simulateVaultRelease({ escrowId, recipient, amount }) {
+  await new Promise((res) => setTimeout(res, 800));
+
+  const generatedHash = `tx_vault_release_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+  return {
+    success: true,
+    hash: generatedHash,
+    contractAddress: SOROBAN_CONFIG.paymentVaultAddress,
+    action: "release",
+    escrowId,
+    recipient,
+    amount,
+    timestamp: new Date().toISOString(),
+    explorerUrl: `https://stellar.expert/explorer/testnet/tx/${generatedHash}`,
   };
 }

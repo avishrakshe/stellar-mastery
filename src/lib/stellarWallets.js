@@ -74,12 +74,13 @@ export async function checkWalletInstalled(walletId) {
 }
 
 export async function connectSelectedWallet(walletId, agentKeypair = null) {
-  if (walletId === "agent_mode" && agentKeypair) {
+  if (walletId === "agent_mode") {
+    const kp = agentKeypair || Keypair.random();
     return {
       type: "agent_mode",
-      name: agentKeypair.name || "Agent Keypair",
-      address: agentKeypair.pubKey,
-      secret: agentKeypair.secret,
+      name: kp.name || "Agent Keypair",
+      address: kp.pubKey || kp.publicKey?.() || Keypair.random().publicKey(),
+      secret: kp.secret || kp.secret?.() || "",
       network: "TESTNET",
       networkPassphrase: "Test SDF Network ; September 2015",
     };
@@ -135,17 +136,20 @@ export async function connectSelectedWallet(walletId, agentKeypair = null) {
     };
   }
 
-  // Handle uninstalled wallets cleanly (xBull / Hana)
-  const isInstalled = await checkWalletInstalled(walletId);
-  if (!isInstalled) {
-    const selected = WALLET_TYPES.find((w) => w.id === walletId);
-    const err = new Error(`${selected?.name || "Wallet"} is not installed. Please install the extension or choose another wallet.`);
-    err.code = ERROR_CODES.NOT_INSTALLED;
-    err.downloadUrl = selected?.downloadUrl;
-    throw err;
+  const knownWallet = WALLET_TYPES.find((w) => w.id === walletId);
+  if (knownWallet) {
+    const isInstalled = await checkWalletInstalled(walletId);
+    if (!isInstalled) {
+      const err = new Error(`${knownWallet.name} is not installed. Please install the extension or choose another wallet.`);
+      err.code = ERROR_CODES.NOT_INSTALLED;
+      err.downloadUrl = knownWallet.downloadUrl;
+      throw err;
+    }
   }
 
-  throw new Error("Wallet connection method not supported.");
+  const err = new Error("Wallet connection method not supported.");
+  err.code = ERROR_CODES.UNKNOWN;
+  throw err;
 }
 
 export async function signWithWallet(wallet, xdr) {

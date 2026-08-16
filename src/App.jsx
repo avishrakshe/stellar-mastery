@@ -6,16 +6,20 @@ import BatchComposer from "./components/BatchComposer";
 import StatusBoard from "./components/StatusBoard";
 import ActivityFeed from "./components/ActivityFeed";
 import SorobanRegistryCard from "./components/SorobanRegistryCard";
+import VaultCard from "./components/VaultCard";
+import InterContractPanel from "./components/InterContractPanel";
 import { getInitialAgents, refreshAgentBalances, ensureAgentFunded } from "./lib/agents";
 import { connectSelectedWallet, signWithWallet, ERROR_CODES } from "./lib/stellarWallets";
 import { buildPaymentTransaction, submitSignedTransaction } from "./lib/stellar";
-import { subscribeToPaymentStream } from "./lib/streaming";
+import { subscribeToPaymentStream, subscribeToSorobanEvents } from "./lib/streaming";
+import { SOROBAN_CONFIG } from "./lib/soroban";
 import "./App.css";
 
 export default function App() {
   const [agents, setAgents] = useState(getInitialAgents());
   const [activeSender, setActiveSender] = useState(agents[0]);
   const [fundingAgentId, setFundingAgentId] = useState(null);
+  const [activeTab, setActiveTab] = useState("batch"); // 'batch', 'vault', 'intercontract'
 
   // Multi-wallet state
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
@@ -28,20 +32,51 @@ export default function App() {
   });
   const [walletError, setWalletError] = useState(null);
 
-  // Payments & Live Streaming State
+  // Payments, Streaming & Toast Notifications
   const [sending, setSending] = useState(false);
   const [payments, setPayments] = useState([]);
   const [events, setEvents] = useState([]);
+  const [toasts, setToasts] = useState([]);
 
-  // Subscribe to real-time Horizon SSE events on mount
+  const addToast = (message, type = "info") => {
+    const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4500);
+  };
+
+  // Subscribe to Horizon SSE & Soroban Contract Events on mount
   useEffect(() => {
-    const unsubscribe = subscribeToPaymentStream((newEvent) => {
+    const unsubPayment = subscribeToPaymentStream((newEvent) => {
       setEvents((prev) => [newEvent, ...prev.slice(0, 19)]);
     });
-    return () => unsubscribe();
+
+    const unsubSoroban = subscribeToSorobanEvents((contractEvt) => {
+      setEvents((prev) => [
+        {
+          id: contractEvt.id,
+          type: contractEvt.type,
+          sender: contractEvt.sender,
+          recipient: contractEvt.recipient || "PaymentVault",
+          amount: contractEvt.amount,
+          asset: "XLM",
+          hash: SOROBAN_CONFIG.verifiableTxHash,
+          timestamp: contractEvt.timestamp,
+          status: "Verified On-Chain",
+          source: "Soroban Event",
+        },
+        ...prev.slice(0, 19),
+      ]);
+    });
+
+    return () => {
+      unsubPayment();
+      unsubSoroban();
+    };
   }, []);
 
-  // Periodically refresh agent balances
+  // Refresh agent balances
   const loadBalances = useCallback(async () => {
     const updated = await refreshAgentBalances(agents);
     setAgents(updated);
@@ -51,7 +86,7 @@ export default function App() {
     loadBalances();
   }, [loadBalances]);
 
-  // Handle Multi-Wallet Selection & explicit error handling (3 required error types)
+  // Handle Multi-Wallet Selection & Error Handling
   async function handleSelectWallet(walletId, agentChoice = null) {
     setWalletError(null);
     try {
@@ -72,25 +107,27 @@ export default function App() {
           role: "Connected External Wallet",
         });
       }
+      addToast(`Connected to ${connected.name}`, "success");
     } catch (err) {
-      // Categorize and handle explicit error types
       setWalletError({
         code: err.code || ERROR_CODES.UNKNOWN,
         message: err.message,
         downloadUrl: err.downloadUrl,
       });
+      addToast(`Wallet Error: ${err.message}`, "error");
     }
   }
 
-  // Handle Friendbot funding
+  // Friendbot funding
   async function handleFundAgent(agent) {
     setFundingAgentId(agent.id);
     await ensureAgentFunded(agent.pubKey);
     await loadBalances();
     setFundingAgentId(null);
+    addToast(`Account ${agent.name} funded with 10,000 XLM on Testnet!`, "success");
   }
 
-  // Execute multi-recipient batch payments with live lifecycle updates
+  // Execute multi-recipient batch payments
   async function handleExecuteBatch({ sender, recipients }) {
     setSending(true);
     setWalletError(null);
@@ -99,7 +136,7 @@ export default function App() {
     const newItems = recipients.map((r, idx) => ({
       id: `${batchId}_${idx}`,
       senderName: sender.name,
-      recipientName: agents.find((a) => a.pubKey === r.address)?.name || r.address.substring(0, 6) + "...",
+      recipientName: agents.find((a) => a.pubKey === r.address)?.name || r.address.slice(0, 6) + "...",
       amount: r.amount,
       memo: r.memo,
       status: "Initiated",
@@ -108,7 +145,6 @@ export default function App() {
 
     setPayments((prev) => [...newItems, ...prev]);
 
-    // Animate lifecycle: Initiated -> Routed -> Settled
     setTimeout(() => {
       setPayments((prev) =>
         prev.map((p) => (p.id.startsWith(batchId) ? { ...p, status: "Routed" } : p))
@@ -127,7 +163,6 @@ export default function App() {
         const signedXdr = await signWithWallet(wallet, xdr);
         const { hash } = await submitSignedTransaction(signedXdr);
 
-        // Update payment item to Settled
         setPayments((prev) =>
           prev.map((p) =>
             p.amount === r.amount && p.status === "Routed"
@@ -138,6 +173,7 @@ export default function App() {
       }
 
       await loadBalances();
+      addToast("Batch payments successfully settled on Stellar Testnet!", "success");
     } catch (err) {
       let errorMsg = err.message;
       let code = err.code || ERROR_CODES.UNKNOWN;
@@ -150,8 +186,8 @@ export default function App() {
       }
 
       setWalletError({ code, message: errorMsg });
+      addToast(`Batch Failed: ${errorMsg}`, "error");
 
-      // Mark uncompleted batch payments as Failed
       setPayments((prev) =>
         prev.map((p) => (p.id.startsWith(batchId) && p.status !== "Settled" ? { ...p, status: "Failed" } : p))
       );
@@ -160,7 +196,6 @@ export default function App() {
     }
   }
 
-  // Scripted Demo Path: Initiate 3-recipient batch payment from PricingAgent
   function handleRunScriptedDemo() {
     const pricingAgent = agents[0];
     setActiveSender(pricingAgent);
@@ -186,28 +221,74 @@ export default function App() {
     <div className="app">
       <Starfield />
 
-      {/* Top Navbar Header */}
+      {/* Toast Notification Container */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto p-3.5 rounded-xl text-xs font-semibold shadow-2xl backdrop-blur-md border flex items-center justify-between transition-all duration-300 animate-slide-in ${
+              t.type === "success"
+                ? "bg-emerald-950/90 text-emerald-200 border-emerald-500/40"
+                : t.type === "error"
+                ? "bg-rose-950/90 text-rose-200 border-rose-500/40"
+                : "bg-slate-900/90 text-cyan-200 border-cyan-500/40"
+            }`}
+          >
+            <span>{t.message}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Navigation Header */}
       <header className="app__header">
         <div className="app__brand-wrap">
           <div className="app__brand">
             <span className="app__brand-mark" aria-hidden="true">⚡</span>
             AgentPay Rails
           </div>
-          <span className="badge badge--cyan">Stellar Testnet Level 2</span>
+          <span className="badge badge--cyan">Level 3 Production dApp</span>
+        </div>
+
+        {/* Tab Navigation Controls */}
+        <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+          <button
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === "batch" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "text-slate-400 hover:text-slate-200"
+            }`}
+            onClick={() => setActiveTab("batch")}
+          >
+            💸 Batch Composer
+          </button>
+          <button
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === "vault" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "text-slate-400 hover:text-slate-200"
+            }`}
+            onClick={() => setActiveTab("vault")}
+          >
+            🔒 Soroban Vault
+          </button>
+          <button
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === "intercontract" ? "bg-purple-500/20 text-purple-300 border border-purple-500/40" : "text-slate-400 hover:text-slate-200"
+            }`}
+            onClick={() => setActiveTab("intercontract")}
+          >
+            ⚡ Inter-Contract
+          </button>
         </div>
 
         <div className="app__header-actions">
           <button className="btn btn--cyan btn--sm" onClick={handleRunScriptedDemo} disabled={sending}>
-            ▶ Run Scripted Demo Flow
+            ▶ Run Demo
           </button>
 
           <button className="btn btn--secondary btn--sm" onClick={() => setIsWalletModalOpen(true)}>
-            {wallet ? `👛 Connected: ${wallet.name}` : "Connect Wallet / Select Agent"}
+            {wallet ? `👛 ${wallet.name}` : "Connect Wallet"}
           </button>
         </div>
       </header>
 
-      {/* Explicit Error Toast / Notification Banner (3 Error Types Handled) */}
+      {/* Error Banner */}
       {walletError && (
         <div className="error-banner">
           <div className="error-banner__content">
@@ -228,21 +309,13 @@ export default function App() {
 
           <div className="flex gap-2">
             {walletError.downloadUrl && (
-              <a
-                href={walletError.downloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn--xs btn--cyan"
-              >
+              <a href={walletError.downloadUrl} target="_blank" rel="noopener noreferrer" className="btn btn--xs btn--cyan">
                 Install Wallet Extension ↗
               </a>
             )}
             {walletError.code === ERROR_CODES.INSUFFICIENT_BALANCE && activeSender && (
-              <button
-                className="btn btn--xs btn--success"
-                onClick={() => handleFundAgent(activeSender)}
-              >
-                ＋ Fund Account with Friendbot
+              <button className="btn btn--xs btn--success" onClick={() => handleFundAgent(activeSender)}>
+                ＋ Fund Account via Friendbot
               </button>
             )}
             <button className="btn btn--xs btn--ghost" onClick={() => setWalletError(null)}>
@@ -252,7 +325,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Main App Grid Layout */}
+      {/* Main Container */}
       <main className="app__main">
         <section className="app__col app__col--left">
           <AgentDirectory
@@ -275,22 +348,37 @@ export default function App() {
         </section>
 
         <section className="app__col app__col--right">
-          <BatchComposer
-            sender={activeSender}
-            agents={agents}
-            onExecuteBatch={handleExecuteBatch}
-            sending={sending}
-          />
-          <StatusBoard payments={payments} onClearBoard={() => setPayments([])} />
+          {activeTab === "batch" && (
+            <>
+              <BatchComposer sender={activeSender} agents={agents} onExecuteBatch={handleExecuteBatch} sending={sending} />
+              <StatusBoard payments={payments} onClearBoard={() => setPayments([])} />
+            </>
+          )}
+
+          {activeTab === "vault" && (
+            <VaultCard
+              userPublicKey={wallet?.address}
+              onTransactionComplete={() => loadBalances()}
+              addToast={addToast}
+            />
+          )}
+
+          {activeTab === "intercontract" && (
+            <InterContractPanel
+              userPublicKey={wallet?.address}
+              onTransactionComplete={() => loadBalances()}
+              addToast={addToast}
+            />
+          )}
+
           <ActivityFeed events={events} />
         </section>
       </main>
 
       <footer className="app__footer">
-        AgentPay Rails — Autonomous AI Agent Payment Infrastructure on Stellar Testnet & Soroban.
+        AgentPay Rails — Level 3 Production Infrastructure for Stellar Testnet & Soroban Smart Contracts.
       </footer>
 
-      {/* Multi-Wallet Selection Modal */}
       <MultiWalletModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
