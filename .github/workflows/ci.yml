@@ -1,0 +1,59 @@
+name: Level 3 CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  contracts-ci:
+    name: 🦀 Soroban Smart Contracts Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Cargo Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Test Payment Vault Contract
+        run: |
+          cd contracts/payment_vault
+          cargo test --verbose
+
+      - name: Test Agent Router Inter-Contract Logic
+        run: |
+          cd contracts/agent_router
+          cargo test --verbose
+
+  frontend-ci:
+    name: ⚡ React & Vitest Frontend CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Code Linter (oxlint)
+        run: npm run lint
+
+      - name: Run Vitest Unit & Component Tests
+        run: npx vitest run
+
+      - name: Build Vite Production Bundle
+        run: npm run build
