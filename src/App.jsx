@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import HeaderNav from "./components/HeaderNav";
-import HeroSection from "./components/HeroSection";
+import Starfield from "./components/Starfield";
+import MultiWalletModal from "./components/MultiWalletModal";
 import AgentDirectory from "./components/AgentDirectory";
 import BatchComposer from "./components/BatchComposer";
 import StatusBoard from "./components/StatusBoard";
@@ -8,7 +8,6 @@ import ActivityFeed from "./components/ActivityFeed";
 import SorobanRegistryCard from "./components/SorobanRegistryCard";
 import VaultCard from "./components/VaultCard";
 import InterContractPanel from "./components/InterContractPanel";
-import MultiWalletModal from "./components/MultiWalletModal";
 import { getInitialAgents, refreshAgentBalances, ensureAgentFunded } from "./lib/agents";
 import { connectSelectedWallet, signWithWallet, ERROR_CODES } from "./lib/stellarWallets";
 import { buildPaymentTransaction, submitSignedTransaction } from "./lib/stellar";
@@ -20,8 +19,7 @@ export default function App() {
   const [agents, setAgents] = useState(getInitialAgents());
   const [activeSender, setActiveSender] = useState(agents[0]);
   const [fundingAgentId, setFundingAgentId] = useState(null);
-  const [activeTab, setActiveTab] = useState("registry"); // 'registry', 'activity', 'vault', 'intercontract', 'composer'
-  const [activeMode, setActiveMode] = useState("autonomous"); // 'autonomous', 'wallet', 'intercontract'
+  const [activeTab, setActiveTab] = useState("batch"); // 'batch', 'vault', 'intercontract'
 
   // Multi-wallet state
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
@@ -98,15 +96,13 @@ export default function App() {
 
       if (walletId === "agent_mode" && agentChoice) {
         setActiveSender(agentChoice);
-        setActiveMode("autonomous");
       } else {
-        setActiveMode("wallet");
         setActiveSender({
           id: walletId,
           name: connected.name,
           pubKey: connected.address,
           balance: "10,000.0000000",
-          color: "#2563eb",
+          color: "#22d3ee",
           avatar: "👛",
           role: "Connected External Wallet",
         });
@@ -222,7 +218,9 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className="app">
+      <Starfield />
+
       {/* Toast Notification Container */}
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none">
         {toasts.map((t) => (
@@ -230,10 +228,10 @@ export default function App() {
             key={t.id}
             className={`pointer-events-auto p-3.5 rounded-xl text-xs font-semibold shadow-2xl backdrop-blur-md border flex items-center justify-between transition-all duration-300 animate-slide-in ${
               t.type === "success"
-                ? "bg-emerald-900 text-emerald-100 border-emerald-500/40"
+                ? "bg-emerald-950/90 text-emerald-200 border-emerald-500/40"
                 : t.type === "error"
-                ? "bg-rose-900 text-rose-100 border-rose-500/40"
-                : "bg-slate-900 text-slate-100 border-slate-700"
+                ? "bg-rose-950/90 text-rose-200 border-rose-500/40"
+                : "bg-slate-900/90 text-cyan-200 border-cyan-500/40"
             }`}
           >
             <span>{t.message}</span>
@@ -241,20 +239,62 @@ export default function App() {
         ))}
       </div>
 
-      {/* Top Header Navigation */}
-      <HeaderNav
-        connectedWallet={wallet}
-        onOpenWalletModal={() => setIsWalletModalOpen(true)}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-      />
+      {/* Navigation Header */}
+      <header className="app__header">
+        <div className="app__brand-wrap">
+          <div className="app__brand">
+            <span className="app__brand-mark" aria-hidden="true">⚡</span>
+            AgentPay Rails
+          </div>
+          <span className="badge badge--cyan">Level 3 Production dApp</span>
+        </div>
 
-      <main className="container-main flex-1 pt-6 pb-12">
-        {/* Error Notification Banner */}
-        {walletError && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-center justify-between gap-4">
+        {/* Tab Navigation Controls */}
+        <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+          <button
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === "batch" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "text-slate-400 hover:text-slate-200"
+            }`}
+            onClick={() => setActiveTab("batch")}
+          >
+            💸 Batch Composer
+          </button>
+          <button
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === "vault" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "text-slate-400 hover:text-slate-200"
+            }`}
+            onClick={() => setActiveTab("vault")}
+          >
+            🔒 Soroban Vault
+          </button>
+          <button
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === "intercontract" ? "bg-purple-500/20 text-purple-300 border border-purple-500/40" : "text-slate-400 hover:text-slate-200"
+            }`}
+            onClick={() => setActiveTab("intercontract")}
+          >
+            ⚡ Inter-Contract
+          </button>
+        </div>
+
+        <div className="app__header-actions">
+          <button className="btn btn--cyan btn--sm" onClick={handleRunScriptedDemo} disabled={sending}>
+            ▶ Run Demo
+          </button>
+
+          <button className="btn btn--secondary btn--sm" onClick={() => setIsWalletModalOpen(true)}>
+            {wallet ? `👛 ${wallet.name}` : "Connect Wallet"}
+          </button>
+        </div>
+      </header>
+
+      {/* Error Banner */}
+      {walletError && (
+        <div className="error-banner">
+          <div className="error-banner__content">
+            <span className="error-banner__icon">⚠️</span>
             <div>
-              <strong className="block text-sm font-bold">
+              <strong className="error-banner__title">
                 {walletError.code === ERROR_CODES.NOT_INSTALLED
                   ? "Wallet Extension Not Installed"
                   : walletError.code === ERROR_CODES.USER_REJECTED
@@ -263,163 +303,82 @@ export default function App() {
                   ? "Insufficient Balance Error"
                   : "Transaction Error"}
               </strong>
-              <p className="text-xs text-rose-700 mt-0.5">{walletError.message}</p>
+              <p className="error-banner__msg">{walletError.message}</p>
             </div>
+          </div>
 
-            <div className="flex items-center gap-2">
-              {walletError.downloadUrl && (
-                <a
-                  href={walletError.downloadUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-semibold"
-                >
-                  Install Extension ↗
-                </a>
-              )}
-              {walletError.code === ERROR_CODES.INSUFFICIENT_BALANCE && activeSender && (
-                <button
-                  className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold"
-                  onClick={() => handleFundAgent(activeSender)}
-                >
-                  ＋ Fund via Friendbot
-                </button>
-              )}
-              <button
-                className="px-2 py-1 text-slate-500 text-xs font-semibold"
-                onClick={() => setWalletError(null)}
-              >
-                Dismiss ✕
+          <div className="flex gap-2">
+            {walletError.downloadUrl && (
+              <a href={walletError.downloadUrl} target="_blank" rel="noopener noreferrer" className="btn btn--xs btn--cyan">
+                Install Wallet Extension ↗
+              </a>
+            )}
+            {walletError.code === ERROR_CODES.INSUFFICIENT_BALANCE && activeSender && (
+              <button className="btn btn--xs btn--success" onClick={() => handleFundAgent(activeSender)}>
+                ＋ Fund Account via Friendbot
               </button>
-            </div>
+            )}
+            <button className="btn btn--xs btn--ghost" onClick={() => setWalletError(null)}>
+              Dismiss ✕
+            </button>
           </div>
-        )}
-
-        {/* Hero Section */}
-        <HeroSection
-          onRunScriptedDemo={handleRunScriptedDemo}
-          sending={sending}
-          activeMode={activeMode}
-          setActiveMode={(mode) => {
-            setActiveMode(mode);
-            if (mode === "intercontract") setActiveTab("intercontract");
-          }}
-        />
-
-        {/* Onchain Registry Grid */}
-        <AgentDirectory
-          agents={agents}
-          activeSenderId={activeSender?.id}
-          onSelectSender={(agent) => {
-            setActiveSender(agent);
-            setWallet({
-              type: "agent_mode",
-              name: agent.name,
-              address: agent.pubKey,
-              secret: agent.secret,
-              network: "TESTNET",
-            });
-            addToast(`Selected ${agent.name} as active sender`, "info");
-          }}
-          onFundAgent={handleFundAgent}
-          fundingAgentId={fundingAgentId}
-        />
-
-        {/* Secondary Tab Switcher */}
-        <div className="flex items-center gap-2 mb-6 border-b border-slate-200 pb-3 font-semibold text-sm">
-          <button
-            className={`pb-2 px-3 transition-all ${
-              activeTab === "registry" || activeTab === "composer"
-                ? "border-b-2 border-slate-900 text-slate-900"
-                : "text-slate-400 hover:text-slate-700"
-            }`}
-            onClick={() => setActiveTab("composer")}
-          >
-            💸 Batch Composer
-          </button>
-
-          <button
-            className={`pb-2 px-3 transition-all ${
-              activeTab === "vault"
-                ? "border-b-2 border-slate-900 text-slate-900"
-                : "text-slate-400 hover:text-slate-700"
-            }`}
-            onClick={() => setActiveTab("vault")}
-          >
-            🔒 Soroban Payment Vault
-          </button>
-
-          <button
-            className={`pb-2 px-3 transition-all ${
-              activeTab === "intercontract"
-                ? "border-b-2 border-slate-900 text-slate-900"
-                : "text-slate-400 hover:text-slate-700"
-            }`}
-            onClick={() => setActiveTab("intercontract")}
-          >
-            ⚡ Inter-Contract Station
-          </button>
-
-          <button
-            className={`pb-2 px-3 transition-all ${
-              activeTab === "activity"
-                ? "border-b-2 border-slate-900 text-slate-900"
-                : "text-slate-400 hover:text-slate-700"
-            }`}
-            onClick={() => setActiveTab("activity")}
-          >
-            📡 Live Activity Stream
-          </button>
         </div>
+      )}
 
-        {/* Dynamic Workspace Panels */}
-        {(activeTab === "composer" || activeTab === "registry") && (
-          <div className="space-y-6">
-            <div className="workspace-card">
-              <BatchComposer
-                sender={activeSender}
-                agents={agents}
-                onExecuteBatch={handleExecuteBatch}
-                sending={sending}
-              />
-            </div>
-            <StatusBoard payments={payments} onClearBoard={() => setPayments([])} />
-          </div>
-        )}
+      {/* Main Container */}
+      <main className="app__main">
+        <section className="app__col app__col--left">
+          <AgentDirectory
+            agents={agents}
+            activeSenderId={activeSender?.id}
+            onSelectSender={(agent) => {
+              setActiveSender(agent);
+              setWallet({
+                type: "agent_mode",
+                name: agent.name,
+                address: agent.pubKey,
+                secret: agent.secret,
+                network: "TESTNET",
+              });
+            }}
+            onFundAgent={handleFundAgent}
+            fundingAgentId={fundingAgentId}
+          />
+          <SorobanRegistryCard connectedWallet={wallet} />
+        </section>
 
-        {activeTab === "vault" && (
-          <div className="space-y-6">
+        <section className="app__col app__col--right">
+          {activeTab === "batch" && (
+            <>
+              <BatchComposer sender={activeSender} agents={agents} onExecuteBatch={handleExecuteBatch} sending={sending} />
+              <StatusBoard payments={payments} onClearBoard={() => setPayments([])} />
+            </>
+          )}
+
+          {activeTab === "vault" && (
             <VaultCard
               userPublicKey={wallet?.address}
               onTransactionComplete={() => loadBalances()}
               addToast={addToast}
             />
-            <SorobanRegistryCard connectedWallet={wallet} />
-          </div>
-        )}
+          )}
 
-        {activeTab === "intercontract" && (
-          <div className="space-y-6">
+          {activeTab === "intercontract" && (
             <InterContractPanel
               userPublicKey={wallet?.address}
               onTransactionComplete={() => loadBalances()}
               addToast={addToast}
             />
-          </div>
-        )}
+          )}
 
-        {activeTab === "activity" && (
-          <div className="workspace-card">
-            <ActivityFeed events={events} />
-          </div>
-        )}
+          <ActivityFeed events={events} />
+        </section>
       </main>
 
-      <footer className="py-6 border-t border-slate-200 text-center text-xs text-slate-500 font-medium">
-        AgentPay Rails — Autonomous AI Agent Payment & Inter-Contract Infrastructure on Stellar Testnet & Soroban.
+      <footer className="app__footer">
+        AgentPay Rails — Level 3 Production Infrastructure for Stellar Testnet & Soroban Smart Contracts.
       </footer>
 
-      {/* Multi-Wallet Selection Modal */}
       <MultiWalletModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}

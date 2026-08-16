@@ -1,39 +1,81 @@
 :root {
-  --bg-page: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-card-subtle: #f1f5f9;
-  --border-card: #e2e8f0;
-  
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
-  
-  --lime-accent: #a3e635;
-  --lime-hover: #84cc16;
-  --lime-light: #ecfccb;
-  --lime-text: #3f6212;
-  
-  --blue-primary: #2563eb;
-  --blue-hover: #1d4ed8;
-  --blue-light: #dbeafe;
-  
-  --purple-accent: #8b5cf6;
-  --emerald-accent: #10b981;
+  /* Color — deep-space void with a violet/cyan/pink signal palette */
+  --void-950: #05060d;
+  --void-900: #0a0e1a;
+  --void-800: #121629;
+  --void-700: #1a1f38;
+  --glass-fill: rgba(20, 24, 44, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-hi: rgba(255, 255, 255, 0.16);
 
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-full: 9999px;
-  
-  --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
-  --shadow-lg: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
+  --violet: #7c3aed;
+  --violet-soft: #a78bfa;
+  --cyan: #22d3ee;
+  --pink: #f472b6;
+
+  --text-primary: #eef0fa;
+  --text-secondary: #a7acc4;
+  --text-muted: #6b7092;
+
+  --success: #34d399;
+  --success-dim: rgba(52, 211, 153, 0.12);
+  --error: #fb7185;
+  --error-dim: rgba(251, 113, 133, 0.12);
+
+  /* Type */
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Layout */
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 8px;
+  --edge: 1px solid var(--glass-border);
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
 }
 
 body {
   margin: 0;
-  padding: 0;
-  background-color: var(--bg-page);
-  color: var(--text-main);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--void-900);
   -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
