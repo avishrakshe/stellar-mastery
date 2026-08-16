@@ -222,18 +222,9 @@ export default function App() {
       <Starfield />
 
       {/* Toast Notification Container */}
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none">
+      <div className="toast-container">
         {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={`pointer-events-auto p-3.5 rounded-xl text-xs font-semibold shadow-2xl backdrop-blur-md border flex items-center justify-between transition-all duration-300 animate-slide-in ${
-              t.type === "success"
-                ? "bg-emerald-950/90 text-emerald-200 border-emerald-500/40"
-                : t.type === "error"
-                ? "bg-rose-950/90 text-rose-200 border-rose-500/40"
-                : "bg-slate-900/90 text-cyan-200 border-cyan-500/40"
-            }`}
-          >
+          <div key={t.id} className={`toast toast--${t.type || "info"}`}>
             <span>{t.message}</span>
           </div>
         ))}
