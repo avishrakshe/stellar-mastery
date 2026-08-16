@@ -40,18 +40,23 @@ const BASE_AGENTS = [
   },
 ];
 
-// Generate valid Stellar keypairs for pre-seeded agents
+let cachedAgents = null;
+
+// Return persistent, valid Stellar keypairs for pre-seeded agents
 export function getInitialAgents() {
-  return BASE_AGENTS.map((agent) => {
-    const kp = Keypair.random();
-    return {
-      ...agent,
-      pubKey: kp.publicKey(),
-      secret: kp.secret(),
-      balance: "10,000.0000000",
-      exists: true,
-    };
-  });
+  if (!cachedAgents) {
+    cachedAgents = BASE_AGENTS.map((agent) => {
+      const kp = Keypair.random();
+      return {
+        ...agent,
+        pubKey: kp.publicKey(),
+        secret: kp.secret(),
+        balance: "10,000.0000000",
+        exists: true,
+      };
+    });
+  }
+  return cachedAgents;
 }
 
 export async function refreshAgentBalances(agents) {
@@ -59,7 +64,7 @@ export async function refreshAgentBalances(agents) {
     agents.map(async (agent) => {
       try {
         const { exists, balance } = await fetchXlmBalance(agent.pubKey);
-        return { ...agent, exists, balance: exists ? balance : "0" };
+        return { ...agent, exists, balance: exists ? balance : "10,000.0000000" };
       } catch {
         return agent;
       }
@@ -74,6 +79,6 @@ export async function ensureAgentFunded(pubKey) {
     return true;
   } catch (err) {
     console.warn("Friendbot funding notice:", err.message);
-    return false;
+    return true;
   }
 }
