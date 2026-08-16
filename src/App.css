@@ -1,4 +1,14 @@
 /* Layout & Void Grid Structure */
+.starfield {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .app {
   min-height: 100vh;
   display: flex;
