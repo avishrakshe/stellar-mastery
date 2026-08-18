@@ -20,7 +20,7 @@ The protocol features two deployed, interacting Soroban smart contracts on Stell
 | **`AgentRouter`** | Router contract executing cross-contract invocations (`env.invoke_contract`) to `PaymentVault`. | `CC34B7Y88IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM` | [Stellar Expert Explorer ↗](https://stellar.expert/explorer/testnet/contract/CC34B7Y88IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM) |
 
 - **Verifiable Contract Invocation Hash**: [`6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a`](https://stellar.expert/explorer/testnet/tx/6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a)
-- **Live dApp URL**: [https://agentpay-rails.vercel.app](https://agentpay-rails.vercel.app)
+- **Live dApp URL**: [https://temporary-sonic-marsh-w8uee1k.vercel.app](https://temporary-sonic-marsh-w8uee1k.vercel.app) (Production URL: [https://agentpay-rails.vercel.app](https://agentpay-rails.vercel.app))
 
 ---
 

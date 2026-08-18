@@ -21,7 +21,7 @@ export const SOROBAN_TESTNET_CONFIG = {
   contractExplorerUrl: SOROBAN_CONFIG.vaultExplorerUrl,
 };
 
-export async function simulateRegisterPaymentOnChain({ sender, recipient, amount, memo }) {
+export async function simulateRegisterPaymentOnChain({ sender, recipient, amount, _memo }) {
   return simulateVaultDeposit({
     sender,
     recipient: recipient || "GBX2DEMOUSERXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
