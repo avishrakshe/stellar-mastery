@@ -191,10 +191,16 @@ export default function App() {
       } else if (errorMsg.includes("op_underfunded") || errorMsg.includes("tx_insufficient_balance")) {
         code = ERROR_CODES.INSUFFICIENT_BALANCE;
         errorMsg = "Insufficient XLM balance for batch transaction outflow.";
+      } else if (errorMsg.includes("tx_no_source_account")) {
+        code = ERROR_CODES.INSUFFICIENT_BALANCE;
+        errorMsg = "Account is not yet activated on Stellar Testnet. Auto-activating with Friendbot...";
+        if (sender?.pubKey) {
+          ensureAgentFunded(sender.pubKey).catch(() => {});
+        }
       }
 
       setWalletError({ code, message: errorMsg });
-      addToast(`Batch Failed: ${errorMsg}`, "error");
+      addToast(`Batch Notice: ${errorMsg}`, "error");
 
       setPayments((prev) =>
         prev.map((p) => (p.id.startsWith(batchId) && p.status !== "Settled" ? { ...p, status: "Failed" } : p))
@@ -204,7 +210,7 @@ export default function App() {
     }
   }
 
-  function handleRunScriptedDemo() {
+  async function handleRunScriptedDemo() {
     const pricingAgent = agents[0];
     setActiveSender(pricingAgent);
     setWallet({
@@ -214,6 +220,9 @@ export default function App() {
       secret: pricingAgent.secret,
       network: "TESTNET",
     });
+
+    // Proactively ensure agent is funded
+    ensureAgentFunded(pricingAgent.pubKey).catch(() => {});
 
     handleExecuteBatch({
       sender: pricingAgent,

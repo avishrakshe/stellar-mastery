@@ -41,10 +41,21 @@ const BASE_AGENTS = [
 ];
 
 let cachedAgents = null;
+const STORAGE_KEY = "agentpay_demo_agents_v2";
 
 // Return persistent, valid Stellar keypairs for pre-seeded agents
 export function getInitialAgents() {
   if (!cachedAgents) {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          cachedAgents = JSON.parse(stored);
+          return cachedAgents;
+        }
+      }
+    } catch {}
+
     cachedAgents = BASE_AGENTS.map((agent) => {
       const kp = Keypair.random();
       return {
@@ -55,6 +66,17 @@ export function getInitialAgents() {
         exists: true,
       };
     });
+
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedAgents));
+      }
+    } catch {}
+
+    // Auto-fund PricingAgent on Stellar Testnet
+    if (cachedAgents[0]?.pubKey) {
+      fundWithFriendbot(cachedAgents[0].pubKey).catch(() => {});
+    }
   }
   return cachedAgents;
 }
