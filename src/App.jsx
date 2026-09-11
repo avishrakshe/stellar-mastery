@@ -118,6 +118,14 @@ export default function App() {
     }
   }
 
+  // Handle Wallet Disconnect
+  function handleDisconnectWallet() {
+    setWallet(null);
+    setActiveSender(null);
+    setWalletError(null);
+    addToast("Wallet disconnected successfully", "info");
+  }
+
   // Friendbot funding
   async function handleFundAgent(agent) {
     setFundingAgentId(agent.id);
@@ -154,7 +162,7 @@ export default function App() {
     try {
       for (const r of recipients) {
         const xdr = await buildPaymentTransaction({
-          sourcePublicKey: sender.pubKey || wallet.address,
+          sourcePublicKey: sender?.pubKey || wallet?.address,
           destination: r.address,
           amount: r.amount,
           memo: r.memo,
@@ -273,9 +281,24 @@ export default function App() {
             ▶ Run Demo
           </button>
 
-          <button className="btn btn--secondary btn--sm" onClick={() => setIsWalletModalOpen(true)}>
-            {wallet ? `👛 ${wallet.name}` : "Connect Wallet"}
-          </button>
+          {wallet ? (
+            <div className="flex items-center gap-2">
+              <button className="btn btn--secondary btn--sm" onClick={() => setIsWalletModalOpen(true)}>
+                👛 {wallet.name}
+              </button>
+              <button
+                className="btn btn--ghost btn--sm text-xs text-rose-400 hover:text-rose-300"
+                onClick={handleDisconnectWallet}
+                title="Disconnect connected wallet"
+              >
+                Disconnect
+              </button>
+            </div>
+          ) : (
+            <button className="btn btn--secondary btn--sm" onClick={() => setIsWalletModalOpen(true)}>
+              Connect Wallet
+            </button>
+          )}
         </div>
       </header>
 
