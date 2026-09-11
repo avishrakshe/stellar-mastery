@@ -19,8 +19,7 @@ The protocol features two deployed, interacting Soroban smart contracts on Stell
 | **`PaymentVault`** | Multi-party escrow balance locking, recipient authorization & automated release contract. | `CB67A4W336IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM` | [Stellar Expert Explorer ↗](https://stellar.expert/explorer/testnet/contract/CB67A4W336IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM) |
 | **`AgentRouter`** | Router contract executing cross-contract invocations (`env.invoke_contract`) to `PaymentVault`. | `CC34B7Y88IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM` | [Stellar Expert Explorer ↗](https://stellar.expert/explorer/testnet/contract/CC34B7Y88IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM) |
 
-- **Verifiable Contract Invocation Hash**: [`6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a`](https://stellar.expert/explorer/testnet/tx/6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a)
-- **Live dApp URL**: [https://temporary-sonic-marsh-w8uee1k.vercel.app](https://temporary-sonic-marsh-w8uee1k.vercel.app) (Production URL: [https://agentpay-rails.vercel.app](https://agentpay-rails.vercel.app))
+- **Live dApp URL**: [https://stellar-payment-dapp-nine.vercel.app](https://stellar-payment-dapp-nine.vercel.app) (Backup: [https://stellar-payment-dapp-negd7axyo-avishrakshes-projects.vercel.app](https://stellar-payment-dapp-negd7axyo-avishrakshes-projects.vercel.app))
 
 ---
 
@@ -56,7 +55,7 @@ sequenceDiagram
 | **Public GitHub Repository** | [https://github.com/avishrakshe/stellar-mastery](https://github.com/avishrakshe/stellar-mastery) | ✅ Completed |
 | **README with Complete Documentation** | Complete architecture flow, Soroban contract specs, API endpoints, setup, and verification guide | ✅ Completed |
 | **Minimum 10+ Meaningful Commits** | 29+ granular commits tracking incremental development across Level 1, 2, and 3 | ✅ Completed (29 commits) |
-| **Live Demo Link (Vercel)** | [https://temporary-sonic-marsh-w8uee1k.vercel.app](https://temporary-sonic-marsh-w8uee1k.vercel.app) (Prod: [https://agentpay-rails.vercel.app](https://agentpay-rails.vercel.app)) | ✅ Deployed & Live |
+| **Live Demo Link (Vercel)** | [https://stellar-payment-dapp-nine.vercel.app](https://stellar-payment-dapp-nine.vercel.app) (Backup: [https://stellar-payment-dapp-negd7axyo-avishrakshes-projects.vercel.app](https://stellar-payment-dapp-negd7axyo-avishrakshes-projects.vercel.app)) | ✅ Deployed & Live |
 | **Contract Deployment Addresses** | • **PaymentVault**: `CB67A4W336IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM`<br>• **AgentRouter**: `CC34B7Y88IUKZSRBFL5MZX3P5Q3AOHR3O6YTY7R4EAXIWYWAKH3PAYM` | ✅ Verified on Testnet |
 | **Transaction Hash for Contract Interaction** | [`6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a`](https://stellar.expert/explorer/testnet/tx/6f8a9b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a) | ✅ Verified on Explorer |
 | **Screenshot: Mobile Responsive UI** | [View Screenshot](#1-mobile-responsive-ui) (`./screenshots/mobile-responsive-ui.jpg`) | ✅ Included Below |
